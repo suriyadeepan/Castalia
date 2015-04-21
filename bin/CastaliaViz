@@ -1,0 +1,8 @@
+#!/usr/bin/python
+import subprocess , os , sys
+
+pathToBin = sys.path[0]
+pathToCaVis = pathToBin + "/CaVis.jar"
+
+subprocess.call(['java', '-jar', pathToCaVis])
+

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+rm *.txt
+
+cd ../..
+make -j8
+
+cd Simulations/NSim
+
+../../bin/Castalia -c General
+

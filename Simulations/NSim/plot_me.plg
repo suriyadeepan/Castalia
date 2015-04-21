@@ -1,0 +1,33 @@
+
+set xrange [0:1000]
+set yrange [0:8]
+
+set xtics font "Times,12"
+set ytics font "Times,12"
+
+
+set title "Packet Delivery Ratio (PDR) [ 5x5 STATIC NODES in 100x100 m ]
+
+set ylabel "Packet Delivery Ratio (%)" font "Times,12"
+set xlabel "Simulation Time (s)" font "Times,12"
+
+set key off
+set key bottom right
+set key spacing 2 font "Times,12"
+
+set grid 
+
+#plot for [i=1:4] 'data/energy0'.i.'.dat' smooth bezier lw 1 title ' '.(10*i).' mobile nodes'
+#plot for [i=1:4] 'data/pdr0'.i.'.dat' smooth bezier lw 1 title ' '.(10*i).' mobile nodes'
+#plot for [i=1:10] 'data/0'.i.'_energy_plot.dat' smooth bezier title '0'.i.' mobile nodes' lw 4
+#plot "energy_plot.dat" smooth bezier title "Power Consumption v. time" lw 4
+
+
+plot "energy.dat" with lines lw 1
+
+#plot "cov_7_fb" smooth bezier title "Frontier" lw 2, "cov_7_ne" smooth bezier title "Max Gain Approach" lw 2 
+#plot "cov_7_ne" smooth bezier title "7 nodes" lw 2, "cov_6_ne" smooth bezier title "6 nodes" lw 2, "cov_4_ne" smooth bezier title "4 nodes" lw 2
+#plot "cov_7_fb" smooth bezier title "7 nodes" lw 2, "cov_6_fb" smooth bezier title "6 nodes" lw 2, "cov_4_fb" smooth bezier title "4 nodes" lw 2
+
+
+pause 10
