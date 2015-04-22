@@ -10,11 +10,11 @@ void RandomWpMobilityManager::initialize()
 {
 
 	VirtualMobilityManager::initialize();
-	
+
 	updateInterval = (double)par("updateInterval");
 	updateInterval = updateInterval / 1000;
 	//interval de temps en miliSeconde entre chaque affichage de daplacement (pas) 
-	
+
 	loc1_x = nodeLocation.x;
 	loc1_y = nodeLocation.y;
 	loc1_z = 0;
@@ -29,7 +29,7 @@ void RandomWpMobilityManager::initialize()
 	speed = (double)par("speed");
 
 	//vitesse de dplacement 
-	
+
 	PauseTime = (double)par("PauseTime");
 
 	VarySpeed = par("VarySpeed");
@@ -44,7 +44,7 @@ void RandomWpMobilityManager::initialize()
 	TimeOutPauseTime = 0;
 	newDest = false;
 	Pause = false;
-	
+
 	//cette variable est mise a 1 afin de generer une nouvel destination
 
 	if(VarySpeed){
@@ -53,9 +53,9 @@ void RandomWpMobilityManager::initialize()
 	}
 
 	if (VaryPauseTime) {
- 	        PauseTime = rand() % (int) PauseMax + PauseMin;
-                trace() << "PauseTime defined :" << PauseTime;
-        }
+		PauseTime = rand() % (int) PauseMax + PauseMin;
+		trace() << "PauseTime defined :" << PauseTime;
+	}
 
 	if (speed > 0) {
 
@@ -67,110 +67,122 @@ void RandomWpMobilityManager::initialize()
 		tmp = (distance / speed) / updateInterval;
 		dx = (nextDest_x - loc1_x)/tmp;//definir le pas de X
 		dy = (nextDest_y - loc1_y)/tmp;// definir le pas de y	
-	
+
+		if(dx != 0)
+			direction =  (atan(dy/dx) * 180 * 7 )/22;
+		else
+			direction = 90;
+
 		setLocation(loc1_x, loc1_y, loc1_z);
 		scheduleAt(simTime() + updateInterval,
-			new MobilityManagerMessage("Periodic location update message", MOBILITY_PERIODIC));
+				new MobilityManagerMessage("Periodic location update message", MOBILITY_PERIODIC));
 	}
-TotalDist = 0;
+	TotalDist = 0;
 }
 
 void RandomWpMobilityManager::handleMessage(cMessage * msg)
 {
-            int msgKind = msg -> getKind();
-            
-            switch (msgKind) {
+	int msgKind = msg -> getKind();
 
-                case MOBILITY_PERIODIC: {
+	switch (msgKind) {
 
-                    if (newDest) {
+		case MOBILITY_PERIODIC: {
 
-			    newDestination();		
-                                       
-                    }else {
-			
-			if(!Pause){
-				
-	                     double dist = sqrt(pow(nodeLocation.x - (nodeLocation.x + dx), 2) + pow(nodeLocation.y - (nodeLocation.y + dy), 2));
-	                        TotalDist += dist;
-				nodeLocation.x += dx;
-	                        nodeLocation.y += dy;
+															if (newDest) {
 
-	                        trace() << "changed location(x:y) to " << nodeLocation.x << ":" << nodeLocation.y;
-	                        Mobinfos() <<node->getIndex() << " " << nodeLocation.x
-	                                << " " << nodeLocation.y << " " << nodeLocation.z;
+																newDestination();		
 
-			} else {
-				if(TimeOutPauseTime >= PauseTime){
-					Pause=false;
-                            		TimeOutPauseTime = 0;
-				}else{
-					trace() << "in pause (x:y) " << nodeLocation.x << ":" << nodeLocation.y;
-        	                    	TimeOutPauseTime += updateInterval;
-				}
-                        }
+															}else {
 
-                        if ((dx > 0 && nodeLocation.x > nextDest_x)
-                                || (dx < 0 && nodeLocation.x < nextDest_x)
-                                || (dy > 0 && nodeLocation.y > nextDest_y)
-                                || (dy < 0 && nodeLocation.y < nextDest_y)) {
+																if(!Pause){
 
-           			nodeLocation.x -= dx;
-                                nodeLocation.y -= dy;
-				      
-				loc1_x = nextDest_x;
-	        		loc1_y = nextDest_y;
+																	double dist = sqrt(pow(nodeLocation.x - (nodeLocation.x + dx), 2) + pow(nodeLocation.y - (nodeLocation.y + dy), 2));
+																	TotalDist += dist;
+																	nodeLocation.x += dx;
+																	nodeLocation.y += dy;
 
-             	                newDest = true;
-                        }
+																	trace() << "changed location(x:y) to " << nodeLocation.x << ":" << nodeLocation.y;
+																	Mobinfos() <<node->getIndex() << " " << nodeLocation.x
+																		<< " " << nodeLocation.y << " " << nodeLocation.z;
 
-                    }	
-                    notifyWirelessChannel();
-                    scheduleAt(simTime() + updateInterval,
-                            new MobilityManagerMessage("Periodic location update message", MOBILITY_PERIODIC));
+																} else {
+																	if(TimeOutPauseTime >= PauseTime){
+																		Pause=false;
+																		TimeOutPauseTime = 0;
+																	}else{
+																		trace() << "in pause (x:y) " << nodeLocation.x << ":" << nodeLocation.y;
+																		TimeOutPauseTime += updateInterval;
+																	}
+																}
 
-                    break;
-                }
+																if ((dx > 0 && nodeLocation.x > nextDest_x)
+																		|| (dx < 0 && nodeLocation.x < nextDest_x)
+																		|| (dy > 0 && nodeLocation.y > nextDest_y)
+																		|| (dy < 0 && nodeLocation.y < nextDest_y)) {
 
-                default: {
-                    trace() << "WARNING: Unexpected message " << msgKind;
-                }
-            }
+																	nodeLocation.x -= dx;
+																	nodeLocation.y -= dy;
 
-            delete msg;
-            msg = NULL;
-        }
+																	if(dx != 0)
+																		direction =  (atan(dy/dx) * 180 * 7 )/22;
+																	else
+																		direction = 90;
+
+
+																	loc1_x = nextDest_x;
+																	loc1_y = nextDest_y;
+
+																	newDest = true;
+																}
+
+															}	
+															notifyWirelessChannel();
+															scheduleAt(simTime() + updateInterval,
+																	new MobilityManagerMessage("Periodic location update message", MOBILITY_PERIODIC));
+
+															break;
+														}
+
+		default: {
+							 trace() << "WARNING: Unexpected message " << msgKind;
+						 }
+	}
+
+	delete msg;
+	msg = NULL;
+}
 void RandomWpMobilityManager::newDestination(){
 
-        nextDest_x = uniform(0, snf_x);
-        nextDest_y = uniform(0, snf_y);
+	nextDest_x = uniform(0, snf_x);
+	nextDest_y = uniform(0, snf_y);
 	trace() << "new random destination (x:y) " << nextDest_x << ":" << nextDest_y;
-  
-        distance = sqrt(pow(loc1_x - nextDest_x, 2) + pow(loc1_y - nextDest_y, 2));
-        
+
+	distance = sqrt(pow(loc1_x - nextDest_x, 2) + pow(loc1_y - nextDest_y, 2));
+
 	newDest = false;
 
-        tmp = (distance / speed) / updateInterval;
-        dx = (nextDest_x - loc1_x) / tmp;//definir le pas de X
-        dy = (nextDest_y - loc1_y) / tmp;// definir le pas de y 
+	tmp = (distance / speed) / updateInterval;
+	dx = (nextDest_x - loc1_x) / tmp;//definir le pas de X
+	dy = (nextDest_y - loc1_y) / tmp;// definir le pas de y 
 
-        if (VarySpeed) {
-        speed = rand() % (int) speedMax + speedMin;
-        trace() << "new speed defined :" << speed;
-        }
+	if (VarySpeed) {
+		speed = rand() % (int) speedMax + speedMin;
+		trace() << "new speed defined :" << speed;
+	}
 
-        if (VaryPauseTime) {
- 	        PauseTime = rand() % (int) PauseMax + PauseMin;
-                trace() << "new PauseTime defined :" << PauseTime;
-        }
-		
+	if (VaryPauseTime) {
+		PauseTime = rand() % (int) PauseMax + PauseMin;
+		trace() << "new PauseTime defined :" << PauseTime;
+	}
+
 	Pause = true;	
 }
 void RandomWpMobilityManager::finishSpecific(){
-declareOutput("Trajectory length");
-collectOutput("Trajectory length", "", TotalDist);
+	declareOutput("Trajectory length");
+	collectOutput("Trajectory length", "", TotalDist);
 }
 
 // --- User Defined --- //
 double RandomWpMobilityManager::getSpeed(){ return speed; }
+double RandomWpMobilityManager::getDirection(){ return direction; }
 // ------------------- //

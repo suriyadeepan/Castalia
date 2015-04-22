@@ -21,6 +21,7 @@ class RandomWpMobilityManager: public VirtualMobilityManager {
 	double snf_y;
 	double snf_z;
 	double speed;
+	double direction;
 
 	double PauseTime;
 	bool VarySpeed ;
@@ -56,6 +57,7 @@ class RandomWpMobilityManager: public VirtualMobilityManager {
 
  public:
 	double getSpeed();
+	double getDirection();
 
 };
 

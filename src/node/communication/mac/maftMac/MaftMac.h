@@ -107,6 +107,7 @@ class MaftMac: public VirtualMac
 		void initMobilityManager();
 		void getSelfLocation(int &,int &);
 		double getSpeed();
+		double getDirection();
 		// -----------------------------//
 
 

@@ -68,8 +68,8 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		return;
 	}
 
-	if(incPacket->getPtype() == META_PKT && nodeType == CLUSTER_HEAD && rssi > -89 && phase == P_META){
-		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received META from " << incPacket->getSource() << " @ (" << incPacket->getX() << "," << incPacket->getY() << ")" << " moving at " << incPacket->getV() ;
+	if(incPacket->getPtype() == META_PKT && nodeType == CLUSTER_HEAD){// && rssi > -89 && phase == P_META){
+		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received META from " << incPacket->getSource() << " @ (" << incPacket->getX() << "," << incPacket->getY() << ")" << " moving at " << incPacket->getV() << " in " << incPacket->getAngle() << " dir";
 
 		if(incPacket->getSource() % 2 == 0)
 			rxBuffer.push_back(MNode(incPacket->getSource()));	
@@ -147,6 +147,7 @@ void MaftMac::sendMeta(){
 	metaPkt->setX(x);
 	metaPkt->setY(y);
 	metaPkt->setV(getSpeed());
+	metaPkt->setAngle(getDirection());
 	sendPacket(metaPkt);
 }
 
@@ -295,5 +296,6 @@ void MaftMac::getSelfLocation(int& x, int& y) {
 }
 
 double MaftMac::getSpeed(){ return nodeMobilityModule->getSpeed(); }
+double MaftMac::getDirection(){ return nodeMobilityModule->getDirection(); }
 
 

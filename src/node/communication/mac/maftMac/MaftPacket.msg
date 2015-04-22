@@ -13,7 +13,8 @@ packet MaftPacket extends MacPacket {
 
 	int x;
 	int y;
-	int v;
+	double v;
+	double angle;
 
 	double time_val;
 	double del_t;

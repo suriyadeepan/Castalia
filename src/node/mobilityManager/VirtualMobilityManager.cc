@@ -192,3 +192,7 @@ double VirtualMobilityManager::getSpeed(){
 	return -1;
 }
 
+double VirtualMobilityManager::getDirection(){
+	return -1;
+}
+

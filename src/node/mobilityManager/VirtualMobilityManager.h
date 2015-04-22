@@ -45,7 +45,8 @@ class VirtualMobilityManager: public CastaliaModule{
 
  public:
 	 virtual NodeLocation_type getLocation();
-	 double getSpeed();
+	 virtual double getSpeed();
+	 virtual double getDirection();
 
 };
 
