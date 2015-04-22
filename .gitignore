@@ -9,4 +9,4 @@
 *.tar.gz
 *.tar
 *.zip
-Simulation/*/*.txt
+Simulations/*/*.txt
