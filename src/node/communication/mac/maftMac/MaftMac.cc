@@ -12,6 +12,9 @@ void MaftMac::startup(){
 	del_t = 0;
 
 	pktsGen = 0;
+	round = 0;
+
+	//MFT_PKT_GEN_TIME = 0.01;
 
 	//--- init Mobility Manager ---//
 	initMobilityManager();
@@ -60,6 +63,11 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		dataChannel = -1;
 		dataPair = -1;
 
+		if(round == 0){
+			round++;
+			pktsGen = 0;
+		}
+
 		boundTo = incPacket->getSource();	
 
 		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received SYNC from " << boundTo;
@@ -75,10 +83,10 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received META from " << incPacket->getSource() << " @ (" << incPacket->getX() << "," << incPacket->getY() << ")" << " moving at " << incPacket->getV() << " in " << incPacket->getAngle() << " dir";
 
 		boundNodes[boundNodesSize++] = incPacket->getSource();
-		if(incPacket->getSource() % 2 == 0)
-			rxBuffer[rxBufferSize++] = incPacket->getSource();
+		if(incPacket->getHasData())
+			rxBuffer[txBufferSize++] = incPacket->getSource();
 		else
-			txBuffer[txBufferSize++] = incPacket->getSource();
+			txBuffer[rxBufferSize++] = incPacket->getSource();
 
 		return;
 	}
@@ -152,6 +160,10 @@ void MaftMac::sendMeta(){
 	metaPkt->setY(y);
 	metaPkt->setV(getSpeed());
 	metaPkt->setAngle(getDirection());
+	if(pktsGen >= 10)
+		metaPkt->setHasData(true);
+	else
+		metaPkt->setHasData(false);
 	sendPacket(metaPkt);
 }
 
@@ -176,9 +188,9 @@ void MaftMac::broadcastSched(double time_val){
 	schedPkt->setTime_val(time_val);
 	schedPkt->setDel_t(node_0_sched_wakeup);
 
-	schedPkt->setPair_count(txBufferSize);
+	schedPkt->setPair_count(boundNodesSize/2);
 	// construct schedule
-	for(int i=0;i<txBufferSize;i++){
+	for(int i=0;i<(int)(boundNodesSize/2);i++){
 		schedPkt->setTxer(i,txBuffer[i]);
 		schedPkt->setRxer(i,rxBuffer[i]);
 		schedPkt->setChannel(i,12+i);
@@ -205,7 +217,7 @@ void MaftMac::timerFiredCallback(int timer) {
 		case GEN_PKT:
 			if(pktsGen < 10)
 				pktsGen++;
-			setTimer(GEN_PKT,MFT_SLOT);
+			setTimer(GEN_PKT,0.004);
 			break;
 
 		// ---------- CLUSTER HEAD -------------//

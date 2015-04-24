@@ -23,6 +23,8 @@ const int MFT_CNTL_CHANNEL = 11;
 
 const int MFT_NODE_DENSITY = 10;
 
+int MFT_PKT_GEN_TIME;
+
 enum MFT_PType {
 	SYNC_PKT = 1,
 	META_PKT = 2,
@@ -94,9 +96,11 @@ enum MFT_MAC_STATE{
 class MaftMac: public VirtualMac
 {
 	protected:
+		// --- compulsory ---
 		void startup();
 		void fromRadioLayer(cPacket *, double, double);
 		void fromNetworkLayer(cPacket *, int);
+
 		void timerFiredCallback(int);
 		void sendPacket(MaftPacket*);
 
@@ -135,6 +139,9 @@ class MaftMac: public VirtualMac
 		double del_t;	
 		double node_x_sched_wakeup;
 		double node_0_sched_wakeup;
+
+		// -- kth round -- //
+		int round;
 
 		int txBuffer[MFT_NODE_DENSITY/2];
 		int txBufferX[MFT_NODE_DENSITY/2];
