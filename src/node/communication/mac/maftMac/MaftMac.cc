@@ -140,7 +140,11 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 			if(incPacket->getEOT()){
 				cancelTimer(DATA_TRANSFER_TIMEOUT);
 				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
-				setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
+
+				if(nodeType == CLUSTER_HEAD)
+					setTimer(WAKE_TO_SYNC,MFT_MINI_SLOT*2);
+				else
+					setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
 			}
 			return;
 	}
@@ -264,7 +268,10 @@ void MaftMac::timerFiredCallback(int timer) {
 			phase = P_SCHED;
 			boundTo = chooseNewCH();
 			broadcastSched( getTimer(WAKE_TO_SYNC).dbl() - simTime().dbl() );
-			setTimer(WAKE_TO_SYNC,SCHED_P * MFT_SLOT);
+			if( boundTo != -1)
+				nodeType = MOBILE_NODE;
+			else
+				setTimer(WAKE_TO_SYNC,SCHED_P * MFT_SLOT);
 			break;
 
 
@@ -296,7 +303,10 @@ void MaftMac::timerFiredCallback(int timer) {
 			else{//-- after sending out 10 packets --//
 				//----- switch to control channel ----//
 				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
-				setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
+				if(nodeType == CLUSTER_HEAD)
+					setTimer(WAKE_TO_SYNC,MFT_MINI_SLOT*2);
+				else
+					setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
 			}
 			break;
 
@@ -305,7 +315,10 @@ void MaftMac::timerFiredCallback(int timer) {
 			//--------- has come to an end------------------//
 		case DATA_TRANSFER_TIMEOUT:
 			toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
-			setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
+			if(nodeType == CLUSTER_HEAD)
+				setTimer(WAKE_TO_SYNC,MFT_MINI_SLOT*2);
+			else
+				setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
 			break;
 
 
@@ -374,6 +387,10 @@ int MaftMac::chooseNewCH(){
 		}
 	}
 
-	return bestNode;
+	getSelfLocation(x,y);
+	if( minDist - distance(x,y,centroid_x,centroid_y) > 2 )
+		return bestNode;
+	else 
+		return -1;
 }
 
