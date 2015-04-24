@@ -60,9 +60,9 @@ MaftPacket::MaftPacket(const char *name, int kind) : ::MacPacket(name,kind)
     this->ptype_var = 0;
     this->pair_count_var = 0;
     for (unsigned int i=0; i<5; i++)
-        this->txer_var[i] = 0;
+        this->node_var[i] = 0;
     for (unsigned int i=0; i<5; i++)
-        this->rxer_var[i] = 0;
+        this->pair_var[i] = 0;
     for (unsigned int i=0; i<5; i++)
         this->channel_var[i] = 0;
     this->x_var = 0;
@@ -70,6 +70,7 @@ MaftPacket::MaftPacket(const char *name, int kind) : ::MacPacket(name,kind)
     this->v_var = 0;
     this->angle_var = 0;
     this->hasData_var = 0;
+    this->dataSize_var = 0;
     this->time_val_var = 0;
     this->del_t_var = 0;
 }
@@ -96,9 +97,9 @@ void MaftPacket::copy(const MaftPacket& other)
     this->ptype_var = other.ptype_var;
     this->pair_count_var = other.pair_count_var;
     for (unsigned int i=0; i<5; i++)
-        this->txer_var[i] = other.txer_var[i];
+        this->node_var[i] = other.node_var[i];
     for (unsigned int i=0; i<5; i++)
-        this->rxer_var[i] = other.rxer_var[i];
+        this->pair_var[i] = other.pair_var[i];
     for (unsigned int i=0; i<5; i++)
         this->channel_var[i] = other.channel_var[i];
     this->x_var = other.x_var;
@@ -106,6 +107,7 @@ void MaftPacket::copy(const MaftPacket& other)
     this->v_var = other.v_var;
     this->angle_var = other.angle_var;
     this->hasData_var = other.hasData_var;
+    this->dataSize_var = other.dataSize_var;
     this->time_val_var = other.time_val_var;
     this->del_t_var = other.del_t_var;
 }
@@ -115,14 +117,15 @@ void MaftPacket::parsimPack(cCommBuffer *b)
     ::MacPacket::parsimPack(b);
     doPacking(b,this->ptype_var);
     doPacking(b,this->pair_count_var);
-    doPacking(b,this->txer_var,5);
-    doPacking(b,this->rxer_var,5);
+    doPacking(b,this->node_var,5);
+    doPacking(b,this->pair_var,5);
     doPacking(b,this->channel_var,5);
     doPacking(b,this->x_var);
     doPacking(b,this->y_var);
     doPacking(b,this->v_var);
     doPacking(b,this->angle_var);
     doPacking(b,this->hasData_var);
+    doPacking(b,this->dataSize_var);
     doPacking(b,this->time_val_var);
     doPacking(b,this->del_t_var);
 }
@@ -132,14 +135,15 @@ void MaftPacket::parsimUnpack(cCommBuffer *b)
     ::MacPacket::parsimUnpack(b);
     doUnpacking(b,this->ptype_var);
     doUnpacking(b,this->pair_count_var);
-    doUnpacking(b,this->txer_var,5);
-    doUnpacking(b,this->rxer_var,5);
+    doUnpacking(b,this->node_var,5);
+    doUnpacking(b,this->pair_var,5);
     doUnpacking(b,this->channel_var,5);
     doUnpacking(b,this->x_var);
     doUnpacking(b,this->y_var);
     doUnpacking(b,this->v_var);
     doUnpacking(b,this->angle_var);
     doUnpacking(b,this->hasData_var);
+    doUnpacking(b,this->dataSize_var);
     doUnpacking(b,this->time_val_var);
     doUnpacking(b,this->del_t_var);
 }
@@ -164,38 +168,38 @@ void MaftPacket::setPair_count(int pair_count)
     this->pair_count_var = pair_count;
 }
 
-unsigned int MaftPacket::getTxerArraySize() const
+unsigned int MaftPacket::getNodeArraySize() const
 {
     return 5;
 }
 
-int MaftPacket::getTxer(unsigned int k) const
+int MaftPacket::getNode(unsigned int k) const
 {
     if (k>=5) throw cRuntimeError("Array of size 5 indexed by %lu", (unsigned long)k);
-    return txer_var[k];
+    return node_var[k];
 }
 
-void MaftPacket::setTxer(unsigned int k, int txer)
+void MaftPacket::setNode(unsigned int k, int node)
 {
     if (k>=5) throw cRuntimeError("Array of size 5 indexed by %lu", (unsigned long)k);
-    this->txer_var[k] = txer;
+    this->node_var[k] = node;
 }
 
-unsigned int MaftPacket::getRxerArraySize() const
+unsigned int MaftPacket::getPairArraySize() const
 {
     return 5;
 }
 
-int MaftPacket::getRxer(unsigned int k) const
+int MaftPacket::getPair(unsigned int k) const
 {
     if (k>=5) throw cRuntimeError("Array of size 5 indexed by %lu", (unsigned long)k);
-    return rxer_var[k];
+    return pair_var[k];
 }
 
-void MaftPacket::setRxer(unsigned int k, int rxer)
+void MaftPacket::setPair(unsigned int k, int pair)
 {
     if (k>=5) throw cRuntimeError("Array of size 5 indexed by %lu", (unsigned long)k);
-    this->rxer_var[k] = rxer;
+    this->pair_var[k] = pair;
 }
 
 unsigned int MaftPacket::getChannelArraySize() const
@@ -265,6 +269,16 @@ void MaftPacket::setHasData(bool hasData)
     this->hasData_var = hasData;
 }
 
+int MaftPacket::getDataSize() const
+{
+    return dataSize_var;
+}
+
+void MaftPacket::setDataSize(int dataSize)
+{
+    this->dataSize_var = dataSize;
+}
+
 double MaftPacket::getTime_val() const
 {
     return time_val_var;
@@ -332,7 +346,7 @@ const char *MaftPacketDescriptor::getProperty(const char *propertyname) const
 int MaftPacketDescriptor::getFieldCount(void *object) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 12+basedesc->getFieldCount(object) : 12;
+    return basedesc ? 13+basedesc->getFieldCount(object) : 13;
 }
 
 unsigned int MaftPacketDescriptor::getFieldTypeFlags(void *object, int field) const
@@ -356,8 +370,9 @@ unsigned int MaftPacketDescriptor::getFieldTypeFlags(void *object, int field) co
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<12) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<13) ? fieldTypeFlags[field] : 0;
 }
 
 const char *MaftPacketDescriptor::getFieldName(void *object, int field) const
@@ -371,18 +386,19 @@ const char *MaftPacketDescriptor::getFieldName(void *object, int field) const
     static const char *fieldNames[] = {
         "ptype",
         "pair_count",
-        "txer",
-        "rxer",
+        "node",
+        "pair",
         "channel",
         "x",
         "y",
         "v",
         "angle",
         "hasData",
+        "dataSize",
         "time_val",
         "del_t",
     };
-    return (field>=0 && field<12) ? fieldNames[field] : NULL;
+    return (field>=0 && field<13) ? fieldNames[field] : NULL;
 }
 
 int MaftPacketDescriptor::findField(void *object, const char *fieldName) const
@@ -391,16 +407,17 @@ int MaftPacketDescriptor::findField(void *object, const char *fieldName) const
     int base = basedesc ? basedesc->getFieldCount(object) : 0;
     if (fieldName[0]=='p' && strcmp(fieldName, "ptype")==0) return base+0;
     if (fieldName[0]=='p' && strcmp(fieldName, "pair_count")==0) return base+1;
-    if (fieldName[0]=='t' && strcmp(fieldName, "txer")==0) return base+2;
-    if (fieldName[0]=='r' && strcmp(fieldName, "rxer")==0) return base+3;
+    if (fieldName[0]=='n' && strcmp(fieldName, "node")==0) return base+2;
+    if (fieldName[0]=='p' && strcmp(fieldName, "pair")==0) return base+3;
     if (fieldName[0]=='c' && strcmp(fieldName, "channel")==0) return base+4;
     if (fieldName[0]=='x' && strcmp(fieldName, "x")==0) return base+5;
     if (fieldName[0]=='y' && strcmp(fieldName, "y")==0) return base+6;
     if (fieldName[0]=='v' && strcmp(fieldName, "v")==0) return base+7;
     if (fieldName[0]=='a' && strcmp(fieldName, "angle")==0) return base+8;
     if (fieldName[0]=='h' && strcmp(fieldName, "hasData")==0) return base+9;
-    if (fieldName[0]=='t' && strcmp(fieldName, "time_val")==0) return base+10;
-    if (fieldName[0]=='d' && strcmp(fieldName, "del_t")==0) return base+11;
+    if (fieldName[0]=='d' && strcmp(fieldName, "dataSize")==0) return base+10;
+    if (fieldName[0]=='t' && strcmp(fieldName, "time_val")==0) return base+11;
+    if (fieldName[0]=='d' && strcmp(fieldName, "del_t")==0) return base+12;
     return basedesc ? basedesc->findField(object, fieldName) : -1;
 }
 
@@ -423,10 +440,11 @@ const char *MaftPacketDescriptor::getFieldTypeString(void *object, int field) co
         "double",
         "double",
         "bool",
+        "int",
         "double",
         "double",
     };
-    return (field>=0 && field<12) ? fieldTypeStrings[field] : NULL;
+    return (field>=0 && field<13) ? fieldTypeStrings[field] : NULL;
 }
 
 const char *MaftPacketDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
@@ -471,16 +489,17 @@ std::string MaftPacketDescriptor::getFieldAsString(void *object, int field, int 
     switch (field) {
         case 0: return long2string(pp->getPtype());
         case 1: return long2string(pp->getPair_count());
-        case 2: return long2string(pp->getTxer(i));
-        case 3: return long2string(pp->getRxer(i));
+        case 2: return long2string(pp->getNode(i));
+        case 3: return long2string(pp->getPair(i));
         case 4: return long2string(pp->getChannel(i));
         case 5: return long2string(pp->getX());
         case 6: return long2string(pp->getY());
         case 7: return double2string(pp->getV());
         case 8: return double2string(pp->getAngle());
         case 9: return bool2string(pp->getHasData());
-        case 10: return double2string(pp->getTime_val());
-        case 11: return double2string(pp->getDel_t());
+        case 10: return long2string(pp->getDataSize());
+        case 11: return double2string(pp->getTime_val());
+        case 12: return double2string(pp->getDel_t());
         default: return "";
     }
 }
@@ -497,16 +516,17 @@ bool MaftPacketDescriptor::setFieldAsString(void *object, int field, int i, cons
     switch (field) {
         case 0: pp->setPtype(string2long(value)); return true;
         case 1: pp->setPair_count(string2long(value)); return true;
-        case 2: pp->setTxer(i,string2long(value)); return true;
-        case 3: pp->setRxer(i,string2long(value)); return true;
+        case 2: pp->setNode(i,string2long(value)); return true;
+        case 3: pp->setPair(i,string2long(value)); return true;
         case 4: pp->setChannel(i,string2long(value)); return true;
         case 5: pp->setX(string2long(value)); return true;
         case 6: pp->setY(string2long(value)); return true;
         case 7: pp->setV(string2double(value)); return true;
         case 8: pp->setAngle(string2double(value)); return true;
         case 9: pp->setHasData(string2bool(value)); return true;
-        case 10: pp->setTime_val(string2double(value)); return true;
-        case 11: pp->setDel_t(string2double(value)); return true;
+        case 10: pp->setDataSize(string2long(value)); return true;
+        case 11: pp->setTime_val(string2double(value)); return true;
+        case 12: pp->setDel_t(string2double(value)); return true;
         default: return false;
     }
 }

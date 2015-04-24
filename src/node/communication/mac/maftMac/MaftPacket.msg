@@ -7,8 +7,8 @@ packet MaftPacket extends MacPacket {
 	int ptype; 
 
 	int pair_count;
-	int txer[5];
-	int rxer[5];
+	int node[5];
+	int pair[5];
 	int channel[5];
 
 	int x;
@@ -17,6 +17,7 @@ packet MaftPacket extends MacPacket {
 	double angle;
 
 	bool hasData;
+	int dataSize;
 
 	double time_val;
 	double del_t;

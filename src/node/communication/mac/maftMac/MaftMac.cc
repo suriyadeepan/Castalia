@@ -32,11 +32,12 @@ void MaftMac::startup(){
 	if(nodeType == CLUSTER_HEAD)
 		setTimer(WAKE_TO_SYNC, 1);
 	else{
-
-		if(SELF_MAC_ADDRESS % 2 == 0)
+ 
+		macType = -1;
+		/*if(SELF_MAC_ADDRESS % 2 == 0)
 			macType = REC;
 		else
-			macType = SEN;
+			macType = SEN;*/
 
 		toRadioLayer(createRadioCommand(SET_STATE,RX));
 		trace() << "NODE:" << SELF_MAC_ADDRESS << " in RX";
@@ -82,11 +83,8 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 	if(incPacket->getPtype() == META_PKT && nodeType == CLUSTER_HEAD){// && rssi > -89 && phase == P_META){
 		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received META from " << incPacket->getSource() << " @ (" << incPacket->getX() << "," << incPacket->getY() << ")" << " moving at " << incPacket->getV() << " in " << incPacket->getAngle() << " dir";
 
-		boundNodes[boundNodesSize++] = incPacket->getSource();
-		if(incPacket->getHasData())
-			rxBuffer[txBufferSize++] = incPacket->getSource();
-		else
-			txBuffer[rxBufferSize++] = incPacket->getSource();
+		boundNodes[boundNodesSize] = incPacket->getSource();
+		boundNodesSizes[boundNodesSize++] = incPacket->getDataSize();
 
 		return;
 	}
@@ -99,31 +97,32 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		del_t = 0.8 * (node_x_sched_wakeup - incPacket->getDel_t());
 		// -------------------- //
 
-		if(macType == SEN){
+		macType = -1;
 
-			for(int i=0;i< incPacket->getPair_count();i++)
-				if( incPacket->getTxer(i) == SELF_MAC_ADDRESS ){
-					dataPair = incPacket->getRxer(i);
-					dataChannel = incPacket->getChannel(i);
-					trace() << "NODE_" << SELF_MAC_ADDRESS << " DataPair:" << dataPair << " DataChannel:" << dataChannel;
-					trace() << "setting channenl to " << dataChannel;
-					toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
-					setTimer(WAKE_TO_SEND_DATA,MFT_MINI_SLOT);
-					return;
-				}
-		}
-		else if(macType == REC){
-			for(int i=0;i< incPacket->getPair_count();i++)
-				if( incPacket->getRxer(i) == SELF_MAC_ADDRESS ){
-					dataPair = incPacket->getTxer(i);
-					dataChannel = incPacket->getChannel(i);
-					toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
-					setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
-					setTimer(DATA_TRANSFER_TIMEOUT,2*MFT_SLOT);
-					return;
-				}
-		}
+		for(int i=0;i< incPacket->getPair_count();i++)
+			if( incPacket->getNode(i) == SELF_MAC_ADDRESS ){
+				macType = SEN;
+				dataPair = incPacket->getPair(i);
+				dataChannel = incPacket->getChannel(i);
+				trace() << SELF_MAC_ADDRESS << " --> " << dataPair << " #" << dataChannel;
+				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
+				setTimer(WAKE_TO_SEND_DATA,MFT_MINI_SLOT);
+				return;
+			}
 
+		for(int i=0;i< incPacket->getPair_count();i++)
+			if( incPacket->getPair(i) == SELF_MAC_ADDRESS ){
+				macType = REC;
+				dataPair = incPacket->getNode(i);
+				dataChannel = incPacket->getChannel(i);
+				trace() << SELF_MAC_ADDRESS << " <-- " << dataPair << " #" << dataChannel;
+				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
+				setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
+				setTimer(DATA_TRANSFER_TIMEOUT,2*MFT_SLOT);
+				return;
+			}
+
+		macType = IDL;
 		return;
 	}
 
@@ -160,10 +159,7 @@ void MaftMac::sendMeta(){
 	metaPkt->setY(y);
 	metaPkt->setV(getSpeed());
 	metaPkt->setAngle(getDirection());
-	if(pktsGen >= 10)
-		metaPkt->setHasData(true);
-	else
-		metaPkt->setHasData(false);
+	metaPkt->setDataSize(pktsGen);
 	sendPacket(metaPkt);
 }
 
@@ -188,14 +184,19 @@ void MaftMac::broadcastSched(double time_val){
 	schedPkt->setTime_val(time_val);
 	schedPkt->setDel_t(node_0_sched_wakeup);
 
-	schedPkt->setPair_count(boundNodesSize/2);
-	// construct schedule
-	for(int i=0;i<(int)(boundNodesSize/2);i++){
-		schedPkt->setTxer(i,txBuffer[i]);
-		schedPkt->setRxer(i,rxBuffer[i]);
+	int pairCount = boundNodesSize/2;
+	schedPkt->setPair_count(pairCount);
+	// ------- construct schedule ------------ //
+	trace() << "----------- SCHED ------------";
+	for(int i=0;i<pairCount;i++){
+
+		schedPkt->setNode(i,boundNodes[i]);
+		schedPkt->setPair(i,boundNodes[i + ceil(pairCount/2)]);
 		schedPkt->setChannel(i,12+i);
-		trace() << " [" << i << "] " << txBuffer[i]<< " -> " << rxBuffer[i]<< " @" << 12+i;
-	}
+		trace() << " [" << i << "] " << boundNodes[i]<< " -> " << boundNodes[i+ ceil(pairCount/2)] << " @" << 12+i;
+	} // --------------------------------------//
+	trace() << "------------------------------";
+
 	sendPacket(schedPkt);
 }
 

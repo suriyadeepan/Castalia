@@ -27,8 +27,8 @@
  *     int ptype;
  * 
  *     int pair_count;
- *     int txer[5];
- *     int rxer[5];
+ *     int node[5];
+ *     int pair[5];
  *     int channel[5];
  * 
  *     int x;
@@ -37,6 +37,7 @@
  *     double angle;
  * 
  *     bool hasData;
+ *     int dataSize;
  * 
  *     double time_val;
  *     double del_t;
@@ -48,14 +49,15 @@ class MaftPacket : public ::MacPacket
   protected:
     int ptype_var;
     int pair_count_var;
-    int txer_var[5];
-    int rxer_var[5];
+    int node_var[5];
+    int pair_var[5];
     int channel_var[5];
     int x_var;
     int y_var;
     double v_var;
     double angle_var;
     bool hasData_var;
+    int dataSize_var;
     double time_val_var;
     double del_t_var;
 
@@ -80,12 +82,12 @@ class MaftPacket : public ::MacPacket
     virtual void setPtype(int ptype);
     virtual int getPair_count() const;
     virtual void setPair_count(int pair_count);
-    virtual unsigned int getTxerArraySize() const;
-    virtual int getTxer(unsigned int k) const;
-    virtual void setTxer(unsigned int k, int txer);
-    virtual unsigned int getRxerArraySize() const;
-    virtual int getRxer(unsigned int k) const;
-    virtual void setRxer(unsigned int k, int rxer);
+    virtual unsigned int getNodeArraySize() const;
+    virtual int getNode(unsigned int k) const;
+    virtual void setNode(unsigned int k, int node);
+    virtual unsigned int getPairArraySize() const;
+    virtual int getPair(unsigned int k) const;
+    virtual void setPair(unsigned int k, int pair);
     virtual unsigned int getChannelArraySize() const;
     virtual int getChannel(unsigned int k) const;
     virtual void setChannel(unsigned int k, int channel);
@@ -99,6 +101,8 @@ class MaftPacket : public ::MacPacket
     virtual void setAngle(double angle);
     virtual bool getHasData() const;
     virtual void setHasData(bool hasData);
+    virtual int getDataSize() const;
+    virtual void setDataSize(int dataSize);
     virtual double getTime_val() const;
     virtual void setTime_val(double time_val);
     virtual double getDel_t() const;

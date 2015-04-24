@@ -152,6 +152,7 @@ class MaftMac: public VirtualMac
 		int rxBufferY[MFT_NODE_DENSITY/2];
 
 		int boundNodes[MFT_NODE_DENSITY];
+		int boundNodesSizes[MFT_NODE_DENSITY];
 		int boundNodesX[MFT_NODE_DENSITY];
 		int boundNodesY[MFT_NODE_DENSITY];
 
