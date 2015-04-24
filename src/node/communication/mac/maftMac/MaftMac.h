@@ -52,7 +52,10 @@ enum MFT_Timers {
 	WAKE_TO_SEND_DATA = 8,
 	WAKE_TO_REC_SCHED = 9,
 
-	DATA_TRANSFER_TIMEOUT = 10
+	DATA_TRANSFER_TIMEOUT = 10,
+
+	// -- Pkt Generation every 4ms -- //
+	GEN_PKT = 11
 
 };
 
@@ -118,12 +121,13 @@ class MaftMac: public VirtualMac
 		int dataChannel;
 		int dataPair;
 
-		int pktsTxed;
 		int pktsRxed;
 
 		int boundTo;
 		int phase;
 
+		// -- pkts generated -- //
+		int pktsGen;		
 		// -- location -- 
 		int x,y;
 

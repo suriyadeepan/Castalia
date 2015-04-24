@@ -16,6 +16,8 @@ packet MaftPacket extends MacPacket {
 	double v;
 	double angle;
 
+	bool hasData;
+
 	double time_val;
 	double del_t;
 }

@@ -8,12 +8,16 @@ void MaftMac::startup(){
 	boundTo = -1;
 	dataChannel = -1;
 	dataPair = -1;
-	pktsTxed = 0;
 	pktsRxed = 0;
 	del_t = 0;
 
+	pktsGen = 0;
+
 	//--- init Mobility Manager ---//
 	initMobilityManager();
+
+	// -- Generate Packets -- //
+	setTimer(GEN_PKT,MFT_SLOT);
 
 	trace() << "NODE:" << SELF_MAC_ADDRESS << " startup()";
 	nodeType = par("nodeType");
@@ -52,7 +56,6 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 	if(incPacket->getPtype() == SYNC_PKT && nodeType == MOBILE_NODE && rssi > -89){
 
 		// reinitialize variables
-		pktsTxed = 0;
 		pktsRxed = 0;
 		dataChannel = -1;
 		dataPair = -1;
@@ -198,6 +201,13 @@ void MaftMac::timerFiredCallback(int timer) {
 
 	switch(timer){
 
+		// ----- Pkt generation -----//
+		case GEN_PKT:
+			if(pktsGen < 10)
+				pktsGen++;
+			setTimer(GEN_PKT,MFT_SLOT);
+			break;
+
 		// ---------- CLUSTER HEAD -------------//
 		case WAKE_TO_SYNC:
 			trace() << "NODE_" << SELF_MAC_ADDRESS << " WAKE_TO_SYNC";
@@ -243,10 +253,10 @@ void MaftMac::timerFiredCallback(int timer) {
 
 		case WAKE_TO_SEND_DATA:
 			//trace() << "NODE_" << SELF_MAC_ADDRESS << " WAKE_TO_SEND_DATA";
-			if(pktsTxed < MFT_NUM_DATA_PKTS){
+			if(pktsGen > 0){
 				setTimer(WAKE_TO_SEND_DATA,MFT_MINI_SLOT);
 				sendData();
-				pktsTxed++;
+				pktsGen--;
 			}
 			else{//-- after sending out 10 packets --//
 				//----- switch to control channel ----//
