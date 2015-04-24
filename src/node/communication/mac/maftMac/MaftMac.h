@@ -21,6 +21,8 @@ const int MFT_NUM_DATA_PKTS = 10;
 
 const int MFT_CNTL_CHANNEL = 11;
 
+const int MFT_NODE_DENSITY = 10;
+
 enum MFT_PType {
 	SYNC_PKT = 1,
 	META_PKT = 2,
@@ -76,14 +78,14 @@ enum MFT_MAC_STATE{
 	IDL = 3
 };
 
-class MNode{
+/*class MNode{
 
 	public:
 		MNode(int);
 
 		int address;
 		bool active;
-};
+};*/
 
 
 class MaftMac: public VirtualMac
@@ -130,9 +132,21 @@ class MaftMac: public VirtualMac
 		double node_x_sched_wakeup;
 		double node_0_sched_wakeup;
 
-		vector<MNode> txBuffer; //Holds the list of Nodes who requested for connection
-		vector<MNode> rxBuffer; //Holds the list of Nodes who requested for connection
+		int txBuffer[MFT_NODE_DENSITY/2];
+		int txBufferX[MFT_NODE_DENSITY/2];
+		int txBufferY[MFT_NODE_DENSITY/2];
 
+		int rxBuffer[MFT_NODE_DENSITY/2];
+		int rxBufferX[MFT_NODE_DENSITY/2];
+		int rxBufferY[MFT_NODE_DENSITY/2];
+
+		int boundNodes[MFT_NODE_DENSITY];
+		int boundNodesX[MFT_NODE_DENSITY];
+		int boundNodesY[MFT_NODE_DENSITY];
+
+		int rxBufferSize;
+		int txBufferSize;
+		int boundNodesSize;
 		// -- Mobility Manager -- //
 		VirtualMobilityManager *nodeMobilityModule; 
 };

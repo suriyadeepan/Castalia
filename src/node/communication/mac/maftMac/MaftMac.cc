@@ -71,10 +71,11 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 	if(incPacket->getPtype() == META_PKT && nodeType == CLUSTER_HEAD){// && rssi > -89 && phase == P_META){
 		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received META from " << incPacket->getSource() << " @ (" << incPacket->getX() << "," << incPacket->getY() << ")" << " moving at " << incPacket->getV() << " in " << incPacket->getAngle() << " dir";
 
+		boundNodes[boundNodesSize++] = incPacket->getSource();
 		if(incPacket->getSource() % 2 == 0)
-			rxBuffer.push_back(MNode(incPacket->getSource()));	
+			rxBuffer[rxBufferSize++] = incPacket->getSource();
 		else
-			txBuffer.push_back(MNode(incPacket->getSource()));	
+			txBuffer[txBufferSize++] = incPacket->getSource();
 
 		return;
 	}
@@ -172,13 +173,13 @@ void MaftMac::broadcastSched(double time_val){
 	schedPkt->setTime_val(time_val);
 	schedPkt->setDel_t(node_0_sched_wakeup);
 
-	schedPkt->setPair_count(txBuffer.size());
+	schedPkt->setPair_count(txBufferSize);
 	// construct schedule
-	for(int i=0;i<txBuffer.size();i++){
-		schedPkt->setTxer(i,txBuffer[i].address);
-		schedPkt->setRxer(i,rxBuffer[i].address);
+	for(int i=0;i<txBufferSize;i++){
+		schedPkt->setTxer(i,txBuffer[i]);
+		schedPkt->setRxer(i,rxBuffer[i]);
 		schedPkt->setChannel(i,12+i);
-		trace() << " [" << i << "] " << txBuffer[i].address << " -> " << rxBuffer[i].address << " @" << 12+i;
+		trace() << " [" << i << "] " << txBuffer[i]<< " -> " << rxBuffer[i]<< " @" << 12+i;
 	}
 	sendPacket(schedPkt);
 }
@@ -203,6 +204,9 @@ void MaftMac::timerFiredCallback(int timer) {
 			phase = P_SYNC;
 			setTimer(WAKE_TO_META,MFT_SLOT);
 			broadcastSync( getTimer(WAKE_TO_META).dbl() - simTime().dbl() );
+			rxBufferSize = 0;
+			txBufferSize = 0;
+			boundNodesSize = 0;
 			break;
 
 
@@ -218,8 +222,6 @@ void MaftMac::timerFiredCallback(int timer) {
 			trace() << "NODE_" << SELF_MAC_ADDRESS << " WAKE_TO_SCHED";
 			phase = P_SCHED;
 			broadcastSched( getTimer(WAKE_TO_SYNC).dbl() - simTime().dbl() );
-			rxBuffer.erase(rxBuffer.begin(),rxBuffer.end());
-			txBuffer.erase(txBuffer.begin(),txBuffer.end());
 			setTimer(WAKE_TO_SYNC,SCHED_P * MFT_SLOT);
 			break;
 
@@ -277,10 +279,10 @@ void MaftMac::timerFiredCallback(int timer) {
 
 }
 
-MNode::MNode(int a){
+/*MNode::MNode(int a){
 	address = a;
 	active = false;
-}
+}*/
 
 void MaftMac::initMobilityManager(){
 	//nodeMobilityModule = check_and_cast<VirtualMobilityManager*>(getParentModule()->getParentModule()->getParentModule()->getSubmodule("node",SELF_MAC_ADDRESS)->getSubmodule("MobilityManager"));
