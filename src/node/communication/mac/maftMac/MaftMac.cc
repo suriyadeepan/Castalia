@@ -284,17 +284,10 @@ void MaftMac::timerFiredCallback(int timer) {
 	active = false;
 }*/
 
-void MaftMac::initMobilityManager(){
-	//nodeMobilityModule = check_and_cast<VirtualMobilityManager*>(getParentModule()->getParentModule()->getParentModule()->getSubmodule("node",SELF_MAC_ADDRESS)->getSubmodule("MobilityManager"));
-	nodeMobilityModule = check_and_cast\
-						<VirtualMobilityManager *>\
-						(getParentModule()->getParentModule()->\
-							getSubmodule("MobilityManager"));
-}
+void MaftMac::initMobilityManager(){ nodeMobilityModule = check_and_cast <VirtualMobilityManager *> (getParentModule()->getParentModule()-> getSubmodule("MobilityManager")); }
 
-void MaftMac::getSelfLocation(int& x, int& y) {
-	x = nodeMobilityModule->getLocation().x;
-	y = nodeMobilityModule->getLocation().y;
+void MaftMac::getSelfLocation(int& x, int& y) { x = nodeMobilityModule->getLocation().x;
+ 	y = nodeMobilityModule->getLocation().y;
 }
 
 double MaftMac::getSpeed(){ return nodeMobilityModule->getSpeed(); }
