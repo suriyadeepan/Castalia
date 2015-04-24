@@ -84,6 +84,8 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received META from " << incPacket->getSource() << " @ (" << incPacket->getX() << "," << incPacket->getY() << ")" << " moving at " << incPacket->getV() << " in " << incPacket->getAngle() << " dir";
 
 		boundNodes[boundNodesSize] = incPacket->getSource();
+		boundNodesX[boundNodesSize] = incPacket->getX();
+		boundNodesY[boundNodesSize] = incPacket->getY();
 		boundNodesSizes[boundNodesSize++] = incPacket->getDataSize();
 
 		return;
@@ -92,6 +94,11 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 	if(incPacket->getPtype() == SCHED_PKT && nodeType == MOBILE_NODE && boundTo == incPacket->getSource()){
 		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received SCHED_PKT from " << incPacket->getSource();
 		boundTo = -1;
+
+		if( SELF_MAC_ADDRESS == incPacket->getNewCH() ){
+			trace() << "I, NODE_" << SELF_MAC_ADDRESS << " am elected by " << incPacket->getSource() << " as the new CH..";
+			nodeType = CLUSTER_HEAD;
+		}
 
 		// -- time correction -- //
 		del_t = 0.8 * (node_x_sched_wakeup - incPacket->getDel_t());
@@ -187,6 +194,8 @@ void MaftMac::broadcastSched(double time_val){
 	schedPkt->setTime_val(time_val);
 	schedPkt->setDel_t(node_0_sched_wakeup);
 
+	schedPkt->setNewCH(boundTo);
+
 	int pairCount = boundNodesSize/2;
 	int j=0;
 	schedPkt->setPair_count(pairCount);
@@ -253,6 +262,7 @@ void MaftMac::timerFiredCallback(int timer) {
 			node_0_sched_wakeup = simTime().dbl();
 			trace() << "NODE_" << SELF_MAC_ADDRESS << " WAKE_TO_SCHED";
 			phase = P_SCHED;
+			boundTo = chooseNewCH();
 			broadcastSched( getTimer(WAKE_TO_SYNC).dbl() - simTime().dbl() );
 			setTimer(WAKE_TO_SYNC,SCHED_P * MFT_SLOT);
 			break;
@@ -338,5 +348,32 @@ void MaftMac::gnomesort(int n, int ar[]) {
 		if (i == 0 || ar[i-1] >= ar[i]) i++;
 		else {int tmp = ar[i]; ar[i] = ar[i-1]; ar[--i] = tmp;}
 	}
+}
+
+
+int MaftMac::channelToFrequency(int channel){ return ((channel-10)*5) + 2400; } 
+double MaftMac::distance(double x1, double y1, double x2, double y2){ return sqrt( ((x1-x2)*(x1-x2)) + ((y1-y2)*(y1-y2)) ); }
+
+int MaftMac::chooseNewCH(){
+
+	double centroid_x=0, centroid_y=0;
+
+	for(int i=0;i<boundNodesSize;i++){
+		centroid_x += boundNodesX[i]/boundNodesSize; centroid_y += boundNodesY[i]/boundNodesSize;
+	}
+
+	double dist = 0;
+	double minDist = 10000;
+	int bestNode = -1;
+
+	for(int i=0;i<boundNodesSize;i++){
+		dist = distance(boundNodesX[i],boundNodesY[i],centroid_x,centroid_y);
+		if(dist  < minDist){
+			bestNode = boundNodes[i];
+			minDist = dist;
+		}
+	}
+
+	return bestNode;
 }
 

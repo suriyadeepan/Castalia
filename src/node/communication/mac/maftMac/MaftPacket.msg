@@ -21,6 +21,8 @@ packet MaftPacket extends MacPacket {
 
 	bool EOT;
 
+	int newCH;
+
 	double time_val;
 	double del_t;
 }

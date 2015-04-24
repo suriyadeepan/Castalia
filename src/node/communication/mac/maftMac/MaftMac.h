@@ -117,11 +117,17 @@ class MaftMac: public VirtualMac
 		void getSelfLocation(int &,int &);
 		double getSpeed();
 		double getDirection();
-		// -----------------------------//
+		// ---------------------------- //
 		
-		// ----- Assignment Problem --- //
+		// ---- Assignment Problem --- //
 		void gnomesort(int,int[]);
-		// -----------------------------//
+		// -------------------------- //
+		
+		// -------- CH Election ------ //
+		int channelToFrequency(int);
+		double distance(double,double,double,double);
+		int chooseNewCH();
+		// -------------------------- //
 
 
 		int nodeType;
