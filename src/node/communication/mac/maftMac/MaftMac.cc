@@ -27,7 +27,7 @@ void MaftMac::startup(){
 	trace() << "NODE:" << SELF_MAC_ADDRESS << " is type:" << nodeType;
 
 	// set channel to MFT_CNTL_CHANNEL
-	toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
+	toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, channelToFrequency(MFT_CNTL_CHANNEL)));
 	
 	if(nodeType == CLUSTER_HEAD)
 		setTimer(WAKE_TO_SYNC, 1);
@@ -112,7 +112,7 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 				dataPair = incPacket->getPair(i);
 				dataChannel = incPacket->getChannel(i);
 				trace() << SELF_MAC_ADDRESS << " --> " << dataPair << " #" << dataChannel;
-				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
+				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, channelToFrequency(dataChannel)));
 				setTimer(WAKE_TO_SEND_DATA,MFT_MINI_SLOT);
 				return;
 			}
@@ -123,7 +123,7 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 				dataPair = incPacket->getNode(i);
 				dataChannel = incPacket->getChannel(i);
 				trace() << SELF_MAC_ADDRESS << " <-- " << dataPair << " #" << dataChannel;
-				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
+				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, channelToFrequency(dataChannel)));
 				setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
 				return;
 			}
@@ -139,7 +139,7 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 			setTimer(DATA_TRANSFER_TIMEOUT,2*MFT_MINI_SLOT);
 			if(incPacket->getEOT()){
 				cancelTimer(DATA_TRANSFER_TIMEOUT);
-				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
+				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, channelToFrequency(MFT_CNTL_CHANNEL)));
 
 				if(nodeType == CLUSTER_HEAD)
 					setTimer(WAKE_TO_SYNC,MFT_MINI_SLOT*2);
@@ -302,7 +302,7 @@ void MaftMac::timerFiredCallback(int timer) {
 			}
 			else{//-- after sending out 10 packets --//
 				//----- switch to control channel ----//
-				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
+				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, channelToFrequency(MFT_CNTL_CHANNEL)));
 				if(nodeType == CLUSTER_HEAD)
 					setTimer(WAKE_TO_SYNC,MFT_MINI_SLOT*2);
 				else
@@ -314,7 +314,7 @@ void MaftMac::timerFiredCallback(int timer) {
 			//----- and the time alloted for data transfer --//
 			//--------- has come to an end------------------//
 		case DATA_TRANSFER_TIMEOUT:
-			toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
+			toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, channelToFrequency(MFT_CNTL_CHANNEL)));
 			if(nodeType == CLUSTER_HEAD)
 				setTimer(WAKE_TO_SYNC,MFT_MINI_SLOT*2);
 			else
