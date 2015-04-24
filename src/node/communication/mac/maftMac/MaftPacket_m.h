@@ -39,6 +39,8 @@
  *     bool hasData;
  *     int dataSize;
  * 
+ *     bool EOT;
+ * 
  *     double time_val;
  *     double del_t;
  * }
@@ -58,6 +60,7 @@ class MaftPacket : public ::MacPacket
     double angle_var;
     bool hasData_var;
     int dataSize_var;
+    bool EOT_var;
     double time_val_var;
     double del_t_var;
 
@@ -103,6 +106,8 @@ class MaftPacket : public ::MacPacket
     virtual void setHasData(bool hasData);
     virtual int getDataSize() const;
     virtual void setDataSize(int dataSize);
+    virtual bool getEOT() const;
+    virtual void setEOT(bool EOT);
     virtual double getTime_val() const;
     virtual void setTime_val(double time_val);
     virtual double getDel_t() const;

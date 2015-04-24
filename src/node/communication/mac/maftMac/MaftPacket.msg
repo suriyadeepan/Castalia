@@ -19,6 +19,8 @@ packet MaftPacket extends MacPacket {
 	bool hasData;
 	int dataSize;
 
+	bool EOT;
+
 	double time_val;
 	double del_t;
 }

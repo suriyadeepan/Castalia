@@ -108,7 +108,7 @@ class MaftMac: public VirtualMac
 		void broadcastSync(double time_val);
 		void sendMeta();
 		void broadcastSched(double time_val);
-		void sendData();
+		void sendData(bool);
 		// ------------------------------//
 		
 
@@ -117,6 +117,10 @@ class MaftMac: public VirtualMac
 		void getSelfLocation(int &,int &);
 		double getSpeed();
 		double getDirection();
+		// -----------------------------//
+		
+		// ----- Assignment Problem --- //
+		void gnomesort(int,int[]);
 		// -----------------------------//
 
 
@@ -143,13 +147,13 @@ class MaftMac: public VirtualMac
 		// -- kth round -- //
 		int round;
 
-		int txBuffer[MFT_NODE_DENSITY/2];
+		/*int txBuffer[MFT_NODE_DENSITY/2];
 		int txBufferX[MFT_NODE_DENSITY/2];
 		int txBufferY[MFT_NODE_DENSITY/2];
 
 		int rxBuffer[MFT_NODE_DENSITY/2];
 		int rxBufferX[MFT_NODE_DENSITY/2];
-		int rxBufferY[MFT_NODE_DENSITY/2];
+		int rxBufferY[MFT_NODE_DENSITY/2];*/
 
 		int boundNodes[MFT_NODE_DENSITY];
 		int boundNodesSizes[MFT_NODE_DENSITY];

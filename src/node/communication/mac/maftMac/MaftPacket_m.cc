@@ -71,6 +71,7 @@ MaftPacket::MaftPacket(const char *name, int kind) : ::MacPacket(name,kind)
     this->angle_var = 0;
     this->hasData_var = 0;
     this->dataSize_var = 0;
+    this->EOT_var = 0;
     this->time_val_var = 0;
     this->del_t_var = 0;
 }
@@ -108,6 +109,7 @@ void MaftPacket::copy(const MaftPacket& other)
     this->angle_var = other.angle_var;
     this->hasData_var = other.hasData_var;
     this->dataSize_var = other.dataSize_var;
+    this->EOT_var = other.EOT_var;
     this->time_val_var = other.time_val_var;
     this->del_t_var = other.del_t_var;
 }
@@ -126,6 +128,7 @@ void MaftPacket::parsimPack(cCommBuffer *b)
     doPacking(b,this->angle_var);
     doPacking(b,this->hasData_var);
     doPacking(b,this->dataSize_var);
+    doPacking(b,this->EOT_var);
     doPacking(b,this->time_val_var);
     doPacking(b,this->del_t_var);
 }
@@ -144,6 +147,7 @@ void MaftPacket::parsimUnpack(cCommBuffer *b)
     doUnpacking(b,this->angle_var);
     doUnpacking(b,this->hasData_var);
     doUnpacking(b,this->dataSize_var);
+    doUnpacking(b,this->EOT_var);
     doUnpacking(b,this->time_val_var);
     doUnpacking(b,this->del_t_var);
 }
@@ -279,6 +283,16 @@ void MaftPacket::setDataSize(int dataSize)
     this->dataSize_var = dataSize;
 }
 
+bool MaftPacket::getEOT() const
+{
+    return EOT_var;
+}
+
+void MaftPacket::setEOT(bool EOT)
+{
+    this->EOT_var = EOT;
+}
+
 double MaftPacket::getTime_val() const
 {
     return time_val_var;
@@ -346,7 +360,7 @@ const char *MaftPacketDescriptor::getProperty(const char *propertyname) const
 int MaftPacketDescriptor::getFieldCount(void *object) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 13+basedesc->getFieldCount(object) : 13;
+    return basedesc ? 14+basedesc->getFieldCount(object) : 14;
 }
 
 unsigned int MaftPacketDescriptor::getFieldTypeFlags(void *object, int field) const
@@ -371,8 +385,9 @@ unsigned int MaftPacketDescriptor::getFieldTypeFlags(void *object, int field) co
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<13) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<14) ? fieldTypeFlags[field] : 0;
 }
 
 const char *MaftPacketDescriptor::getFieldName(void *object, int field) const
@@ -395,10 +410,11 @@ const char *MaftPacketDescriptor::getFieldName(void *object, int field) const
         "angle",
         "hasData",
         "dataSize",
+        "EOT",
         "time_val",
         "del_t",
     };
-    return (field>=0 && field<13) ? fieldNames[field] : NULL;
+    return (field>=0 && field<14) ? fieldNames[field] : NULL;
 }
 
 int MaftPacketDescriptor::findField(void *object, const char *fieldName) const
@@ -416,8 +432,9 @@ int MaftPacketDescriptor::findField(void *object, const char *fieldName) const
     if (fieldName[0]=='a' && strcmp(fieldName, "angle")==0) return base+8;
     if (fieldName[0]=='h' && strcmp(fieldName, "hasData")==0) return base+9;
     if (fieldName[0]=='d' && strcmp(fieldName, "dataSize")==0) return base+10;
-    if (fieldName[0]=='t' && strcmp(fieldName, "time_val")==0) return base+11;
-    if (fieldName[0]=='d' && strcmp(fieldName, "del_t")==0) return base+12;
+    if (fieldName[0]=='E' && strcmp(fieldName, "EOT")==0) return base+11;
+    if (fieldName[0]=='t' && strcmp(fieldName, "time_val")==0) return base+12;
+    if (fieldName[0]=='d' && strcmp(fieldName, "del_t")==0) return base+13;
     return basedesc ? basedesc->findField(object, fieldName) : -1;
 }
 
@@ -441,10 +458,11 @@ const char *MaftPacketDescriptor::getFieldTypeString(void *object, int field) co
         "double",
         "bool",
         "int",
+        "bool",
         "double",
         "double",
     };
-    return (field>=0 && field<13) ? fieldTypeStrings[field] : NULL;
+    return (field>=0 && field<14) ? fieldTypeStrings[field] : NULL;
 }
 
 const char *MaftPacketDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
@@ -498,8 +516,9 @@ std::string MaftPacketDescriptor::getFieldAsString(void *object, int field, int 
         case 8: return double2string(pp->getAngle());
         case 9: return bool2string(pp->getHasData());
         case 10: return long2string(pp->getDataSize());
-        case 11: return double2string(pp->getTime_val());
-        case 12: return double2string(pp->getDel_t());
+        case 11: return bool2string(pp->getEOT());
+        case 12: return double2string(pp->getTime_val());
+        case 13: return double2string(pp->getDel_t());
         default: return "";
     }
 }
@@ -525,8 +544,9 @@ bool MaftPacketDescriptor::setFieldAsString(void *object, int field, int i, cons
         case 8: pp->setAngle(string2double(value)); return true;
         case 9: pp->setHasData(string2bool(value)); return true;
         case 10: pp->setDataSize(string2long(value)); return true;
-        case 11: pp->setTime_val(string2double(value)); return true;
-        case 12: pp->setDel_t(string2double(value)); return true;
+        case 11: pp->setEOT(string2bool(value)); return true;
+        case 12: pp->setTime_val(string2double(value)); return true;
+        case 13: pp->setDel_t(string2double(value)); return true;
         default: return false;
     }
 }

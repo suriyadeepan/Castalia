@@ -118,7 +118,6 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 				trace() << SELF_MAC_ADDRESS << " <-- " << dataPair << " #" << dataChannel;
 				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
 				setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
-				setTimer(DATA_TRANSFER_TIMEOUT,2*MFT_SLOT);
 				return;
 			}
 
@@ -129,8 +128,12 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 	if(macType == REC && incPacket->getPtype() == DATA_PKT && incPacket->getDestination() == SELF_MAC_ADDRESS && incPacket->getSource() == dataPair){
 			trace() << "NODE_" << SELF_MAC_ADDRESS << " received DATA_PKT from " << incPacket->getSource();
 			pktsRxed++;
-			if(pktsRxed > 9){
+			cancelTimer(DATA_TRANSFER_TIMEOUT);
+			setTimer(DATA_TRANSFER_TIMEOUT,2*MFT_MINI_SLOT);
+			if(incPacket->getEOT()){
+				cancelTimer(DATA_TRANSFER_TIMEOUT);
 				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
+				setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
 			}
 			return;
 	}
@@ -185,27 +188,35 @@ void MaftMac::broadcastSched(double time_val){
 	schedPkt->setDel_t(node_0_sched_wakeup);
 
 	int pairCount = boundNodesSize/2;
+	int j=0;
 	schedPkt->setPair_count(pairCount);
+
+	// --- before scheduling, sort boundNodes buffer --- //
+	gnomesort(pairCount, boundNodes);
+
 	// ------- construct schedule ------------ //
 	trace() << "----------- SCHED ------------";
 	for(int i=0;i<pairCount;i++){
 
+		j = i + ceil(boundNodesSize/2);
+
 		schedPkt->setNode(i,boundNodes[i]);
-		schedPkt->setPair(i,boundNodes[i + ceil(pairCount/2)]);
+		schedPkt->setPair(i,boundNodes[j]);
 		schedPkt->setChannel(i,12+i);
-		trace() << " [" << i << "] " << boundNodes[i]<< " -> " << boundNodes[i+ ceil(pairCount/2)] << " @" << 12+i;
+		trace() << " [" << i << "] " << boundNodes[i]<< " -> " << boundNodes[j] << " @" << 12+i;
 	} // --------------------------------------//
 	trace() << "------------------------------";
 
 	sendPacket(schedPkt);
 }
 
-void MaftMac::sendData(){
+void MaftMac::sendData(bool EOT){
 
 	MaftPacket *dataPkt;
 	dataPkt = new MaftPacket("Meta Packet", MAC_LAYER_PACKET);
 	dataPkt->setDestination(dataPair);
 	dataPkt->setPtype(DATA_PKT);
+	dataPkt->setEOT(EOT);
 	sendPacket(dataPkt);
 }
 
@@ -227,8 +238,6 @@ void MaftMac::timerFiredCallback(int timer) {
 			phase = P_SYNC;
 			setTimer(WAKE_TO_META,MFT_SLOT);
 			broadcastSync( getTimer(WAKE_TO_META).dbl() - simTime().dbl() );
-			rxBufferSize = 0;
-			txBufferSize = 0;
 			boundNodesSize = 0;
 			break;
 
@@ -268,7 +277,10 @@ void MaftMac::timerFiredCallback(int timer) {
 			//trace() << "NODE_" << SELF_MAC_ADDRESS << " WAKE_TO_SEND_DATA";
 			if(pktsGen > 0){
 				setTimer(WAKE_TO_SEND_DATA,MFT_MINI_SLOT);
-				sendData();
+				if(pktsGen == 1)
+					sendData(true);
+				else
+					sendData(false);
 				pktsGen--;
 			}
 			else{//-- after sending out 10 packets --//
@@ -316,4 +328,15 @@ void MaftMac::getSelfLocation(int& x, int& y) { x = nodeMobilityModule->getLocat
 double MaftMac::getSpeed(){ return nodeMobilityModule->getSpeed(); }
 double MaftMac::getDirection(){ return nodeMobilityModule->getDirection(); }
 
+
+// --- sort boundNodes based on data_size --- //
+void MaftMac::gnomesort(int n, int ar[]) {
+
+	int i = 0;
+	
+	while (i < n) {
+		if (i == 0 || ar[i-1] >= ar[i]) i++;
+		else {int tmp = ar[i]; ar[i] = ar[i-1]; ar[--i] = tmp;}
+	}
+}
 
