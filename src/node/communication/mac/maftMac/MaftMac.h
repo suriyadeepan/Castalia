@@ -14,8 +14,8 @@ using namespace std;
 // ----------------------------------------
 // --- 0.0004 seconds = 0.4 ms = 400 us ---
 // ------- slot size ----------------------
-const double MFT_SLOT = 0.004;
-const double MFT_MINI_SLOT = 0.0004;
+const double MFT_SLOT = 0.04;
+const double MFT_MINI_SLOT = 0.004;
 
 const int MFT_NUM_DATA_PKTS = 10;
 
@@ -79,8 +79,9 @@ enum MFT_MAC_STATE{
 class MNode{
 
 	public:
-		MNode(int);
+		MNode(int,int,int);
 
+		int x,y;
 		int address;
 		bool active;
 };
@@ -124,6 +125,17 @@ class MaftMac: public VirtualMac
 
 		// -- location -- 
 		int x,y;
+
+		// ------ CH election -------- //
+		void broadcastNomination();
+		int chooseNewCH();
+		int newCH;
+		// ------------------------- //
+
+		// ---- Supporting Functions --- //
+		int channelToFrequency(int);
+		double distance(double,double,double,double);
+		// ---------------------------- //
 
 		// -- time correction -- 
 		double del_t;	

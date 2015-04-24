@@ -7,7 +7,7 @@ package node.mobilityManager.randomWpMobilityManager;
 simple RandomWpMobilityManager like node.mobilityManager.iMobilityManager {
  parameters:
 	bool collectTraceInfo = default (false);
-	double updateInterval = default (10);
+	double updateInterval = default (100);
 	double sNfield_x = default (100);
 	double sNfield_y = default (100);
 	double speed = default (1);

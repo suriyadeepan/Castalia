@@ -3,9 +3,5 @@
 rm *.txt
 
 cd ../..
-make -j8
-
-cd Simulations/MaftSim
-
-../../bin/Castalia -c General
+make -j8 && cd Simulations/MaftSim && ../../bin/Castalia -c General
 

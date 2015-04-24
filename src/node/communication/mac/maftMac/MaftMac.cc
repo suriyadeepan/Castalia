@@ -11,6 +11,8 @@ void MaftMac::startup(){
 	pktsTxed = 0;
 	pktsRxed = 0;
 	del_t = 0;
+	newCH = -1;
+
 
 	//--- init Mobility Manager ---//
 	initMobilityManager();
@@ -68,13 +70,13 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		return;
 	}
 
-	if(incPacket->getPtype() == META_PKT && nodeType == CLUSTER_HEAD){// && rssi > -89 && phase == P_META){
+	if(incPacket->getPtype() == META_PKT && nodeType == CLUSTER_HEAD && rssi > -91 && phase == P_META){
 		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received META from " << incPacket->getSource() << " @ (" << incPacket->getX() << "," << incPacket->getY() << ")" << " moving at " << incPacket->getV() << " in " << incPacket->getAngle() << " dir";
 
 		if(incPacket->getSource() % 2 == 0)
-			rxBuffer.push_back(MNode(incPacket->getSource()));	
+			rxBuffer.push_back(MNode(incPacket->getSource(),incPacket->getX(),incPacket->getY()));	
 		else
-			txBuffer.push_back(MNode(incPacket->getSource()));	
+			txBuffer.push_back(MNode(incPacket->getSource(),incPacket->getX(),incPacket->getY()));	
 
 		return;
 	}
@@ -87,26 +89,46 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		del_t = 0.8 * (node_x_sched_wakeup - incPacket->getDel_t());
 		// -------------------- //
 
-		if(macType == SEN){
+		// check if new cluster head is elected
+		newCH = incPacket->getNewCH();
+		if(newCH != -1){
+			if( newCH == SELF_MAC_ADDRESS ){
+				nodeType = CLUSTER_HEAD;
+				trace() << "I, NODE_" << SELF_MAC_ADDRESS << " am the new CH";
+				trace() << "All hail NODE_" << newCH;
+			}
+			else{
+				trace() << "NODE_" << SELF_MAC_ADDRESS << " accepts " << newCH << " as the new CH"; 
+				boundTo = CLUSTER_HEAD;
+			}
+		}
+
+		if(SELF_MAC_ADDRESS % 2 == 1){
+
+			trace() << "I, NODE_" << SELF_MAC_ADDRESS << " am a SENDER";
 
 			for(int i=0;i< incPacket->getPair_count();i++)
 				if( incPacket->getTxer(i) == SELF_MAC_ADDRESS ){
 					dataPair = incPacket->getRxer(i);
 					dataChannel = incPacket->getChannel(i);
 					trace() << "NODE_" << SELF_MAC_ADDRESS << " DataPair:" << dataPair << " DataChannel:" << dataChannel;
-					trace() << "setting channenl to " << dataChannel;
+					trace() << "setting channel to " << dataChannel << " freq: " << ((dataChannel-10)*5) + 2400 ;
 					toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
-					setTimer(WAKE_TO_SEND_DATA,MFT_MINI_SLOT);
+					pktsTxed = 0;
+					setTimer(WAKE_TO_SEND_DATA,MFT_MINI_SLOT*3);
 					return;
 				}
 		}
-		else if(macType == REC){
+		else {
+			trace() << "I, NODE_" << SELF_MAC_ADDRESS << " am a Receiver";
 			for(int i=0;i< incPacket->getPair_count();i++)
 				if( incPacket->getRxer(i) == SELF_MAC_ADDRESS ){
 					dataPair = incPacket->getTxer(i);
 					dataChannel = incPacket->getChannel(i);
+					trace() << "NODE_" << SELF_MAC_ADDRESS << " DataPair:" << dataPair << " DataChannel:" << dataChannel;
+					trace() << "setting channel to " << dataChannel << " freq: " << ((dataChannel-10)*5) + 2400 ;
 					toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((dataChannel-10)*5) + 2400) );
-					setTimer(WAKE_TO_RX,MFT_MINI_SLOT);
+					setTimer(WAKE_TO_RX,MFT_MINI_SLOT*3);
 					setTimer(DATA_TRANSFER_TIMEOUT,2*MFT_SLOT);
 					return;
 				}
@@ -115,12 +137,18 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		return;
 	}
 
-	if(macType == REC && incPacket->getPtype() == DATA_PKT && incPacket->getDestination() == SELF_MAC_ADDRESS && incPacket->getSource() == dataPair){
+	if(SELF_MAC_ADDRESS % 2 == 0 && incPacket->getPtype() == DATA_PKT && incPacket->getDestination() == SELF_MAC_ADDRESS && incPacket->getSource() == dataPair){
 			trace() << "NODE_" << SELF_MAC_ADDRESS << " received DATA_PKT from " << incPacket->getSource();
 			pktsRxed++;
 			if(pktsRxed > 9){
+				pktsRxed = 0;
+				// if 10 data packets are received, switch to control channel
+				cancelTimer(DATA_TRANSFER_TIMEOUT); // --- Cancel timeout mechanism --- //
 				toRadioLayer(createRadioCommand(SET_CARRIER_FREQ, ((MFT_CNTL_CHANNEL-10)*5) + 2400) );
+				if(nodeType == CLUSTER_HEAD)// ------- if i'm a cluster head (elected by the ex-CH) -------
+					setTimer(WAKE_TO_SYNC,MFT_MINI_SLOT);// -- I should start synchronization before ex-CH --
 			}
+			
 			return;
 	}
 
@@ -172,6 +200,9 @@ void MaftMac::broadcastSched(double time_val){
 	schedPkt->setTime_val(time_val);
 	schedPkt->setDel_t(node_0_sched_wakeup);
 
+	// if new cluster head is chosen
+	schedPkt->setNewCH(newCH);
+
 	schedPkt->setPair_count(txBuffer.size());
 	// construct schedule
 	for(int i=0;i<txBuffer.size();i++){
@@ -217,10 +248,18 @@ void MaftMac::timerFiredCallback(int timer) {
 			node_0_sched_wakeup = simTime().dbl();
 			trace() << "NODE_" << SELF_MAC_ADDRESS << " WAKE_TO_SCHED";
 			phase = P_SCHED;
+			newCH = chooseNewCH();
 			broadcastSched( getTimer(WAKE_TO_SYNC).dbl() - simTime().dbl() );
+			//broadcastSched( getTimer(WAKE_TO_SYNC).dbl() - simTime().dbl() );
+			if(newCH != -1){
+				trace() << "New CH : " << newCH << " chosen; changing to MOBILE_NODE";
+				nodeType = MOBILE_NODE;
+				setTimer(WAKE_TO_RX,2*MFT_MINI_SLOT);
+			}
+			else
+				setTimer(WAKE_TO_SYNC,SCHED_P * MFT_SLOT);
 			rxBuffer.erase(rxBuffer.begin(),rxBuffer.end());
 			txBuffer.erase(txBuffer.begin(),txBuffer.end());
-			setTimer(WAKE_TO_SYNC,SCHED_P * MFT_SLOT);
 			break;
 
 
@@ -277,8 +316,10 @@ void MaftMac::timerFiredCallback(int timer) {
 
 }
 
-MNode::MNode(int a){
+MNode::MNode(int a, int x_val, int y_val){
 	address = a;
+	x = x_val;
+	y = x_val;
 	active = false;
 }
 
@@ -296,6 +337,46 @@ void MaftMac::getSelfLocation(int& x, int& y) {
 }
 
 double MaftMac::getSpeed(){ return nodeMobilityModule->getSpeed(); }
+
 double MaftMac::getDirection(){ return nodeMobilityModule->getDirection(); }
+
+int MaftMac::channelToFrequency(int channel){ return ((channel-10)*5) + 2400; } 
+
+double MaftMac::distance(double x1, double y1, double x2, double y2){ return sqrt( ((x1-x2)*(x1-x2)) + ((y1-y2)*(y1-y2)) ); }
+
+int MaftMac::chooseNewCH(){
+
+	vector<MNode> boundNodes; 
+	boundNodes.reserve( txBuffer.size() + rxBuffer.size() ); // preallocate memory
+	boundNodes.insert( boundNodes.end(), txBuffer.begin(), txBuffer.end() );
+	boundNodes.insert( boundNodes.end(), rxBuffer.begin(), rxBuffer.end() );
+
+	double centroid_x=0, centroid_y=0;
+	for(int i=0;i<boundNodes.size();i++){
+		centroid_x += boundNodes[i].x; centroid_y += boundNodes[i].y;
+	}
+
+	centroid_x = centroid_x / ( txBuffer.size() + rxBuffer.size() );
+	centroid_y = centroid_y / ( txBuffer.size() + rxBuffer.size() );
+
+	double dist = 0;
+	double minDist = 10000;
+	int bestNode = -1;
+	for(int i=0;i<boundNodes.size();i++){
+		dist = distance(boundNodes[i].x,boundNodes[i].y,centroid_x,centroid_y);
+		if(dist  < minDist){
+			bestNode = boundNodes[i].address;
+			minDist = dist;
+		}
+	}
+	getSelfLocation(x,y);
+
+	if( minDist < distance(x,y,centroid_x,centroid_y) )
+		return bestNode;
+	else
+		return -1;
+}
+
+
 
 

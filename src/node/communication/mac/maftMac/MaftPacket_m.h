@@ -36,6 +36,8 @@
  *     double v;
  *     double angle;
  * 
+ *     int newCH;
+ * 
  *     double time_val;
  *     double del_t;
  * }
@@ -53,6 +55,7 @@ class MaftPacket : public ::MacPacket
     int y_var;
     double v_var;
     double angle_var;
+    int newCH_var;
     double time_val_var;
     double del_t_var;
 
@@ -94,6 +97,8 @@ class MaftPacket : public ::MacPacket
     virtual void setV(double v);
     virtual double getAngle() const;
     virtual void setAngle(double angle);
+    virtual int getNewCH() const;
+    virtual void setNewCH(int newCH);
     virtual double getTime_val() const;
     virtual void setTime_val(double time_val);
     virtual double getDel_t() const;
