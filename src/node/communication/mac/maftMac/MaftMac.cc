@@ -59,6 +59,9 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 	
 	if(incPacket->getPtype() == SYNC_PKT && nodeType == MOBILE_NODE && rssi > -89){
 
+		// Cancel Sync timeout
+		cancelTimer(SYNC_TIMEOUT);
+
 		// reinitialize variables
 		pktsRxed = 0;
 		dataChannel = -1;
@@ -77,10 +80,14 @@ void MaftMac::fromRadioLayer(cPacket * pkt, double rssi, double lqi){
 		//setTimer(WAKE_TO_SEND_META,( (int)uniform(1,40) * MFT_MINI_SLOT ) + incPacket->getTime_val()  );
 		setTimer(WAKE_TO_SEND_META,( SELF_MAC_ADDRESS * 5 * MFT_MINI_SLOT ) + incPacket->getTime_val()  );
 		toRadioLayer(createRadioCommand(SET_STATE,SLEEP));
+
+		// Sync timeout
+		setTimer(SYNC_TIMEOUT,18*MFT_SLOT);
+		
 		return;
 	}
 
-	if(incPacket->getPtype() == META_PKT && nodeType == CLUSTER_HEAD){// && rssi > -89 && phase == P_META){
+	if(incPacket->getPtype() == META_PKT && nodeType == CLUSTER_HEAD && phase == P_META){// && rssi > -89 && phase == P_META){
 		trace() << "NODE_" << SELF_MAC_ADDRESS << " : Received META from " << incPacket->getSource() << " @ (" << incPacket->getX() << "," << incPacket->getY() << ")" << " moving at " << incPacket->getV() << " in " << incPacket->getAngle() << " dir";
 
 		boundNodes[boundNodesSize] = incPacket->getSource();
@@ -245,12 +252,23 @@ void MaftMac::timerFiredCallback(int timer) {
 			setTimer(GEN_PKT,0.004);
 			break;
 
+		/*case SYNC_TIMEOUT:
+			//toRadioLayer(createRadioCommand(SET_STATE,RX));
+			setTimer(WAKE_TO_RX,MFT_SLOT);
+			break;*/
+			//trace() << "NODE_" << SELF_MAC_ADDRESS << " : SYNC_TIMEOUT";
+			//trace() << "I elect myself as CLUSTER_HEAD";
+			//setTimer(WAKE_TO_SYNC,MFT_MINI_SLOT*SELF_MAC_ADDRESS);
+			//toRadioLayer(createRadioCommand(SET_CARRIER_FREQ,channelToFrequency(MFT_CNTL_CHANNEL)));
+
+
 		// ---------- CLUSTER HEAD -------------//
 		case WAKE_TO_SYNC:
 			trace() << "NODE_" << SELF_MAC_ADDRESS << " WAKE_TO_SYNC";
 			phase = P_SYNC;
 			setTimer(WAKE_TO_META,MFT_SLOT);
 			broadcastSync( getTimer(WAKE_TO_META).dbl() - simTime().dbl() );
+			nodeType = CLUSTER_HEAD;
 			boundNodesSize = 0;
 			break;
 

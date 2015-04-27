@@ -57,7 +57,11 @@ enum MFT_Timers {
 	DATA_TRANSFER_TIMEOUT = 10,
 
 	// -- Pkt Generation every 4ms -- //
-	GEN_PKT = 11
+	GEN_PKT = 11,
+
+	// -- Synchronization Timeout -- //
+	SYNC_TIMEOUT = 12,
+	SYNC_TIMEOUT2 = 13
 
 };
 
@@ -66,7 +70,9 @@ enum MFT_frameDuration{
 
 	SYNC_P  = 1,
 	META_P  = 5,
-	SCHED_P = 1
+	SCHED_P = 1,
+
+	SYNC_TIMEOUT_DURATION = 18
 };
 // ---------------------------- //
 
@@ -152,6 +158,9 @@ class MaftMac: public VirtualMac
 
 		// -- kth round -- //
 		int round;
+
+		// --- activity --- //
+		bool active;
 
 		/*int txBuffer[MFT_NODE_DENSITY/2];
 		int txBufferX[MFT_NODE_DENSITY/2];

@@ -104,6 +104,8 @@ int SCHED_PKT_RX_COUNT = 0;
 int SYNC_PKT_TX_COUNT = 0;
 int SYNC_PKT_RX_COUNT = 0;
 
+int CNTL_PKT_TX_COUNT = 0;
+
 class MyPacketContainer {
 public:
 	MyPacketContainer(int, int);
@@ -118,6 +120,7 @@ public:
 	int x;
 	int y;
 };
+
 
 class ModProt: public VirtualMac
 {
@@ -142,7 +145,6 @@ class ModProt: public VirtualMac
 
 		void logChStats();
 		void logNonChStats();
-		
 
 
 		int nodeType;
@@ -163,6 +165,8 @@ class ModProt: public VirtualMac
 		vector<MyPacketContainer> dataReplyBuffer; //Buffer holding <timer_id, destination> objects for DREP.
 
 		vector<MyNode> boundNodes; //Holds the list of Nodes who requested for connection
+
+
 };
 
 #endif

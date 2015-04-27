@@ -3,5 +3,11 @@
 rm *.txt
 
 cd ../..
-make -j8 && cd Simulations/MaftSim && ../../bin/Castalia -c General
+if [ $# -lt 1 ]
+then
+	make -j8 && cd Simulations/MaftSim && ../../bin/Castalia -c General
+else
+	make -j8 && cd Simulations/MaftSim && ../../bin/Castalia -c Migration1
+fi
+
 

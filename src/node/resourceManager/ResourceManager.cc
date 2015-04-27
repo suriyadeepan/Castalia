@@ -130,6 +130,7 @@ void ResourceManager::finishSpecific()
 
 double ResourceManager::estimateLifetime(void) 
 {
+	trace() << "EST_ENERGY" << 	((initialEnergy * simTime().dbl()) / ((initialEnergy - remainingEnergy) * 86400.0)); 
 	return ((initialEnergy * simTime().dbl()) / ((initialEnergy - remainingEnergy) * 86400.0));
 }
 

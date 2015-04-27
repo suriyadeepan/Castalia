@@ -13,6 +13,7 @@ void OurProt::startup(){
 
 	totalDataPktCount = 0;
 	totalDataPktTxCount = 0;
+	totalCntlPkts = 0;
 
 	node_0_wake_time = -1;
 	node_x_wake_time = -1;
@@ -231,6 +232,7 @@ Node::Node(int a){
 
 void OurProt::broadcastDREQ(double time_val){
 
+	totalCntlPkts++;
 	//trace() << "Time value sent with DREQ : " << time_val;
 	CPacket *syncPacket;
 	syncPacket = new CPacket("Broadcast Packet", MAC_LAYER_PACKET);
@@ -243,6 +245,7 @@ void OurProt::broadcastDREQ(double time_val){
 
 void OurProt::broadcastSCHED(){
 
+	totalCntlPkts++;
 	CPacket *schedPkt;
 	schedPkt = new CPacket("Schedule Packet", MAC_LAYER_PACKET);
 
@@ -275,6 +278,7 @@ void OurProt::updateTable(){
 
 void OurProt::sendDREP(){
 
+	totalCntlPkts++;
 	CPacket *drepPkt;
 	drepPkt = new CPacket("Discovery Reply Packet", MAC_LAYER_PACKET);
 	drepPkt->setDestination(boundTo);
@@ -285,6 +289,7 @@ void OurProt::sendDREP(){
 
 void OurProt::sendDATA_REQ(int iter){
 
+	totalCntlPkts++;
 	CPacket *datareqPkt;
 	datareqPkt = new CPacket("DATA Request Packet", MAC_LAYER_PACKET);
 	datareqPkt->setDestination(boundNodes[iter].address);
@@ -330,6 +335,7 @@ void OurProt::timerFiredCallback(int timer) {
 			trace() << "CLUSTER_HEAD_" << SELF_MAC_ADDRESS << " : DATA_PKT_COUNT  " << dataPktCount;
 			trace() << "STAT : # DATA_PKT_RX  " << totalDataPktCount;
 			trace() << "STAT : # DATA_PKT_TX  " << totalDataPktTxCount;
+			trace() << "STAT : # 1 CNTL_PKT_TX  " << totalCntlPkts;
 			if(totalDataPktCount > 0 && totalDataPktTxCount > 0)
 				trace() << "STAT:PDR " << (double) (totalDataPktCount)/(double) (totalDataPktTxCount+1) ;
 			//dataPktCount = 0;

@@ -90,6 +90,7 @@ double	DATA_P = 10*DT_SLOT; // varies based --
 
 int totalDataPktCount; 
 int totalDataPktTxCount;
+int totalCntlPkts; 
 
 class PacketContainer {
 public:

@@ -8,21 +8,16 @@ void ModProt::startup(){
 	frame_count = 0;
 
 	trace() << "NODE:" << SELF_MAC_ADDRESS << " startup()";
-	//getSelfLocation(selfX, selfY);
-	
-	//trace() << "NODE:" << SELF_MAC_ADDRESS << " put to RX";
 	
 	nodeType = par("nodeType");
+
+	//initResourceManager();
 
 	if(nodeType == CLUSTER_HEAD)
 		setTimer(WAKE_TO_SYNCPHASE, WAKE_TIME);
 	else
 		toRadioLayer(createRadioCommand(SET_STATE, RX));
 	
-	/*if(TRACE_MOBILITY) {
-		setTimer(MOBILITY_TRACE, 0.1);
-	}*/
-
 }
 
 void ModProt::fromNetworkLayer(cPacket * pkt, int destination) { //This will only be used in Source, no one else generates packets
@@ -154,6 +149,7 @@ void ModProt::broadcastPkt(int pktType){
 
 void ModProt::sendReqPacket(){
 
+	CNTL_PKT_TX_COUNT++;
 	ModPacket *reqPkt;
 	reqPkt = new ModPacket("Request Packet", MAC_LAYER_PACKET);
 	reqPkt->setSource(SELF_MAC_ADDRESS);
@@ -166,6 +162,7 @@ void ModProt::sendReqPacket(){
 }
 
 void ModProt::sendDataPacket(){
+
 	ModPacket *dataPkt;
 	dataPkt = new ModPacket("Data Packet", MAC_LAYER_PACKET);
 	dataPkt->setDestination(myClusterHead);
@@ -186,6 +183,7 @@ void ModProt::logBoundNodes(){
 
 void ModProt::buildAndBroadcastSchedPkt(double sleep_t){
 
+	CNTL_PKT_TX_COUNT++;
 	ModPacket *schedPkt;
 	schedPkt = new ModPacket("Schedule Packet", MAC_LAYER_PACKET);
 
@@ -204,6 +202,7 @@ void ModProt::buildAndBroadcastSchedPkt(double sleep_t){
 
 void ModProt::broadcastSyncPkt(double sleep_t){
 
+	CNTL_PKT_TX_COUNT++;
 	ModPacket *syncPacket;
 	syncPacket = new ModPacket("Synchronization Packet", MAC_LAYER_PACKET);
 	syncPacket->setDestination(BROADCAST_MAC_ADDRESS);
@@ -214,8 +213,12 @@ void ModProt::broadcastSyncPkt(double sleep_t){
 
 void ModProt::logChStats(){
 
+	trace() << frame_count << " frames!";
+
 	trace() << "STAT : Received DATA PKTS : " << DATA_PKT_RX_COUNT ;//<< " vs " << frame_count << " frames!";
 	trace() << "STAT : Transmitted DATA PKTS : " << DATA_PKT_TX_COUNT;
+	trace() << "STAT : CNTL_PKT_TX: " << CNTL_PKT_TX_COUNT;
+	//trace() << "STAT : LIFETIME: " << estimateLifeTime();
 	trace() << "STAT : PDR : " << (double)DATA_PKT_RX_COUNT/(double)DATA_PKT_TX_COUNT;
 }
 
